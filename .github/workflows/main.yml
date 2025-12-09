@@ -16,7 +16,7 @@ jobs:
       - name: Add SSH key
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.ec3-key }}
+          ssh-private-key: ${{ secrets['ec3-key'] }}
 
       - name: Copy repo to EC2
         run: |
