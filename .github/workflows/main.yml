@@ -1,0 +1,73 @@
+name: Deploy Vite App to EC2
+
+on:
+  push:
+    branches: 
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+      uses: actions/checkout@v3
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ MIIEowIBAAKCAQEAlZpjXuuwWiptkuArA4XOo8bzTARZKSDAlSmoJM3JSWKPuP1p
+dEPnaw4Xjh2S4sj3TweeYfkesetQcBq/sRqBPP8XUsufP0WmtLdWyqOQ0pCA1dfk
+xpF+ecWTFem9DmIwEGAvoRJqfn1zfo1WZZXov6U7fxQXNclOt0BxVIA3u1kjA1T0
+rWtXVstQKMIKGTba1LGeB7JhVqokC8n/mzgooMsjwMJCuTvLzBBo1D9WgUM5RRTG
+RGOd6QUeHDoKQ8sTH2u5yyvpe6xtPeig4oVpvxjnK9n9JZ/imyixMgbHIS9o6waX
+5Xe8hb+5TZRyw/fCzcb7N6cPt6cF3+tNJ+4COQIDAQABAoIBAFL+PCRbchEDOphh
+ndstbw5yf2RrgR8M2Wmmm24Xb5QzhnHku4zRYt+ECNNBWsxPGsuP+XB2qG2hkpUu
+cauJfareBQ1cgvKx7CKTFyYBiYUWvzJiu7rg2h4p2kgszEHffLSI98NOmR+k7t6F
+ACoI+P7gZlpARgQDspR8vqJXIxPeLSbg+uUbr6N35zKre/gYqBCrFYF94sScR+US
+KE4VhrxAKVi1mwfFrFYOEoz7d6Hwkg0Abt0OGF5CFqPzruA9mxj7SstShfprLiN5
+u3du2VQWXAARc8yciYT4owrcHviuMajeqc9x1BZndGvpq6I/nc5DaSwEIVC+NGo+
++ialw0UCgYEAxWkn6cxsHOYWe6WJOK02thrLA3wsATbIFENrQPsOzPDkniYgf22z
+4WIZj/m2o2i8LKtQwo+Y7sUzC06ItEkiWPwQ+JmrYhjPJC5cnHr6shzEgj2/HkyL
+/a4iXnF8fx8wbRYbZ9vLXyUD9AzPOip+kCZW+891KgoC7BLoZRXbY2cCgYEAwgDo
+STNgPOO40V4+THimO26ZqY9d30eU24F2x+seAkV6ri8Rzj3YQYfWaSESzZNBddQg
+ovECVBRcnIfeeo8kbtzVUupcmiM1xr44lBEO/x/tYTArjyzlEZs1/h6RfiSBE3ui
+B+w+Rw4rq/5LAGy5a8my6G9x/6sm2zjEtxDeiV8CgYEArdArk2Ao5Lz1mMKkcmGY
+ZXhrvVLMT/lS6vx9Z8ZlPq7vLAv32xrVIaHFTg4Y8AHchRwFzHiwt7Krgc4Q8WPf
+OSgfLTPoQUQExh+H7UMejkpj/ySsrNnK/H4gxrT3X9ovQi0Pzj8o7kniFDRfFSCr
+NPJ87dO4nl4YOpFfSvmWpAsCgYAfY94x2eo8b+w7lDAoV20uOJsMYHIj6oUfbzc0
+6coVPAC5pkwPPtp63+vFXuCX+regxQ3yz2Q9Dn5dpW5ODlMqzPiHTfxlxESzP5wP
++SKgDR5vl0e1BuKZkq+NyoxoCKgJ6vswpPz+qkBOt/qSuwTVd/FGwqGDaMIEvo61
+wDkBqQKBgFRR3ewmzNZClqqWAKwUVwgJZC8TcZmqNl7Wh7yMkVAD3FdrCNpNQ0vU
+1FVigdhmHSWFiOrmWF+npDpdqggc6hidFs37JGyNX36b6o6Jcd/c5TnJ/1qve8M+
+TBXpFQFbSi2Ekz8/0vfEUNoM55iAZpbXmQDrbGoYEw8+l4o+iKAB
+ }}
+
+      - name: Copy repo to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@54.160.166.201 "rm -rf ~/app || true"
+          scp -o StrictHostKeyChecking=no -r . ec2-user@54.160.166.201:~/app
+
+      - name: Install & Build on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@54.160.166.201 "
+            # Install Node if needed
+            sudo yum install -y nodejs npm || true
+
+            cd ~/app
+
+            # Install papaparse (added as requested)
+            npm install papaparse
+
+            # Build Vite project
+            npm run build
+
+            # Install pm2 globally if not installed
+            sudo npm install -g pm2 || true
+
+            # Kill previous instance
+            pm2 delete marketing-ui || true
+
+            # Serve dist folder
+            pm2 serve dist 5173 --name marketing-ui --spa
+          "
