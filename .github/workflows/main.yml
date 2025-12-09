@@ -45,4 +45,4 @@ jobs:
 
             # Serve dist folder
             pm2 serve dist 5173 --name marketing-ui --spa
-          "
+          
